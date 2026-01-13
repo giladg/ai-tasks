@@ -28,6 +28,9 @@ MANIFEST
 .env
 .env.local
 .env.*.local
+.env.production
+.env.backup
+*.env
 
 # Database
 *.db
