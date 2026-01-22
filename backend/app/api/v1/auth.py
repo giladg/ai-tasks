@@ -9,8 +9,10 @@ from app.schemas.user import User as UserSchema
 from app.services.auth_service import auth_service
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.config import get_settings
 
 router = APIRouter(prefix="/auth")
+settings = get_settings()
 
 
 @router.get("/google/login", response_model=GoogleAuthURL)
@@ -56,8 +58,8 @@ async def google_callback(
         jwt_token = auth_service.create_jwt_token(user)
 
         # Redirect to frontend with token and user data
-        frontend_url = f"http://localhost:5173/auth/callback"
-        redirect_url = f"{frontend_url}?token={jwt_token}"
+        frontend_callback = f"{settings.FRONTEND_URL}/auth/callback"
+        redirect_url = f"{frontend_callback}?token={jwt_token}"
 
         return RedirectResponse(url=redirect_url)
 
@@ -65,7 +67,7 @@ async def google_callback(
         # Redirect to frontend with error
         error_message = urllib.parse.quote(str(e))
         return RedirectResponse(
-            url=f"http://localhost:5173/login?error={error_message}"
+            url=f"{settings.FRONTEND_URL}/login?error={error_message}"
         )
 
 
