@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Task Manager"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
+    FRONTEND_URL: str = "http://localhost:5173"  # Frontend URL for OAuth redirects
 
     # Database
     DATABASE_URL: str = "sqlite:///./taskmanager.db"
