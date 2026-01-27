@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
+import { useAuthStatus } from '../hooks/useAuthStatus';
 import TaskList from '../components/tasks/TaskList';
 import TaskFilters from '../components/tasks/TaskFilters';
+import AuthorizationBanner from '../components/auth/AuthorizationBanner';
 import { Priority, SourceType } from '../types/task';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const { needsAuthorization, hasDataAccess, refetchAuthStatus } = useAuthStatus();
+
   const [filters, setFilters] = useState<{
     is_done?: boolean;
     priority?: Priority;
@@ -24,6 +31,24 @@ const Dashboard: React.FC = () => {
     triggerSync,
     isSyncing,
   } = useTasks(filters);
+
+  // Handle authorization callback
+  useEffect(() => {
+    const authorized = searchParams.get('authorized');
+    const error = searchParams.get('error');
+
+    if (authorized === 'true') {
+      setShowSuccessMessage(true);
+      refetchAuthStatus();
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    } else if (error) {
+      console.error('Authorization error:', error);
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams, refetchAuthStatus]);
 
   const handleSync = () => {
     triggerSync();
@@ -80,6 +105,36 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="mb-6 bg-green-50 border-l-4 border-green-500 rounded-lg p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <svg
+                className="w-6 h-6 text-green-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div>
+                <p className="font-medium text-green-900">Authorization Successful!</p>
+                <p className="text-sm text-green-700">You can now sync your Gmail and Calendar data.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Authorization Banner */}
+        {needsAuthorization && (
+          <div className="mb-8">
+            <AuthorizationBanner />
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white border border-gray-200 rounded-lg p-6">

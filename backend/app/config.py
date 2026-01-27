@@ -30,13 +30,21 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str  # Required
     GOOGLE_CLIENT_SECRET: str  # Required
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
-    GOOGLE_SCOPES: List[str] = [
+    GOOGLE_DATA_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/data-callback"
+
+    # Separate scopes for two-step OAuth flow
+    GOOGLE_LOGIN_SCOPES: List[str] = [
         "openid",
         "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+    GOOGLE_DATA_SCOPES: List[str] = [
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/calendar.readonly"
     ]
+
+    # Combined scopes (for backward compatibility and checking)
+    GOOGLE_SCOPES: List[str] = GOOGLE_LOGIN_SCOPES + GOOGLE_DATA_SCOPES
 
     # Gemini AI
     GEMINI_API_KEY: str  # Required
