@@ -7,10 +7,13 @@ settings = get_settings()
 
 # Create SQLAlchemy engine
 # For SQLite, we need to add connect_args to enable foreign keys and check same thread
+# For MySQL/PostgreSQL, pool_pre_ping ensures connections are alive before use
 engine = create_engine(
     settings.DATABASE_URL,
     connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
-    echo=settings.DEBUG  # Log SQL queries in debug mode
+    echo=settings.DEBUG,  # Log SQL queries in debug mode
+    pool_pre_ping=True,  # Test connections before using them (prevents "MySQL server has gone away")
+    pool_recycle=3600  # Recycle connections after 1 hour (prevents stale connections)
 )
 
 # Create SessionLocal class for database sessions
