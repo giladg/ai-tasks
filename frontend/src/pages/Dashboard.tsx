@@ -12,7 +12,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const { needsAuthorization, hasDataAccess, refetchAuthStatus } = useAuthStatus();
+  const { needsAuthorization, refetchAuthStatus } = useAuthStatus();
 
   const [filters, setFilters] = useState<{
     is_done?: boolean;

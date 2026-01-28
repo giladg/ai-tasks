@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
-interface AuthorizationBannerProps {
-  onAuthorize?: () => void;
-}
-
-const AuthorizationBanner: React.FC<AuthorizationBannerProps> = ({ onAuthorize }) => {
+const AuthorizationBanner: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAuthorize = async () => {
