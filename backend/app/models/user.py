@@ -19,9 +19,13 @@ class User(Base):
     picture_url = Column(Text)
 
     # OAuth tokens (stored encrypted using Fernet)
-    access_token = Column(Text, nullable=False)
-    refresh_token = Column(Text, nullable=False)
-    token_expires_at = Column(DateTime, nullable=False)
+    # Nullable because user might log in without authorizing Gmail/Calendar access initially
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+    token_expires_at = Column(DateTime, nullable=True)
+
+    # Track if user has authorized Gmail/Calendar data access
+    has_data_access = Column(Boolean, default=False)
 
     # Sync metadata
     last_sync_at = Column(DateTime, nullable=True)  # Last successful data collection

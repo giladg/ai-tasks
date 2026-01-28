@@ -11,6 +11,13 @@ export interface GoogleAuthURL {
   authorization_url: string;
 }
 
+export interface AuthStatus {
+  authenticated: boolean;
+  has_data_access: boolean;
+  email: string;
+  name: string | null;
+}
+
 export const authService = {
   // Get Google OAuth authorization URL
   async getGoogleAuthUrl(): Promise<string> {
@@ -29,6 +36,18 @@ export const authService = {
   // Get current user info
   async getCurrentUser(): Promise<User> {
     const response = await api.get<User>('/api/v1/auth/me');
+    return response.data;
+  },
+
+  // Get authorization status (check if user has Gmail/Calendar access)
+  async getAuthStatus(): Promise<AuthStatus> {
+    const response = await api.get<AuthStatus>('/api/v1/auth/status');
+    return response.data;
+  },
+
+  // Get authorization URL for Gmail/Calendar data access
+  async authorizeDataAccess(): Promise<GoogleAuthURL> {
+    const response = await api.get<GoogleAuthURL>('/api/v1/auth/google/authorize-data');
     return response.data;
   },
 

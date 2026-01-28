@@ -29,17 +29,27 @@ class AuthService:
             }
         }
 
-    def get_authorization_url(self) -> Tuple[str, str]:
+    def get_authorization_url(self, flow_type: str = 'login') -> Tuple[str, str]:
         """
         Generate Google OAuth authorization URL.
+
+        Args:
+            flow_type: 'login' for initial authentication, 'data' for Gmail/Calendar access
 
         Returns:
             Tuple of (authorization_url, state)
         """
+        if flow_type == 'data':
+            scopes = settings.GOOGLE_LOGIN_SCOPES + settings.GOOGLE_DATA_SCOPES
+            redirect_uri = settings.GOOGLE_DATA_REDIRECT_URI
+        else:
+            scopes = settings.GOOGLE_LOGIN_SCOPES
+            redirect_uri = settings.GOOGLE_REDIRECT_URI
+
         flow = Flow.from_client_config(
             client_config=self.client_config,
-            scopes=settings.GOOGLE_SCOPES,
-            redirect_uri=settings.GOOGLE_REDIRECT_URI
+            scopes=scopes,
+            redirect_uri=redirect_uri
         )
 
         # Generate state for CSRF protection
@@ -47,27 +57,35 @@ class AuthService:
 
         authorization_url, _ = flow.authorization_url(
             access_type='offline',  # Request refresh token
-            prompt='consent',  # Force consent screen to always get refresh token
+            prompt='consent' if flow_type == 'data' else 'select_account',  # Force consent for data access
             state=state
         )
 
         return authorization_url, state
 
-    def exchange_code_for_tokens(self, code: str, state: str) -> dict:
+    def exchange_code_for_tokens(self, code: str, state: str, flow_type: str = 'login') -> dict:
         """
         Exchange authorization code for access and refresh tokens.
 
         Args:
             code: Authorization code from Google callback
             state: State parameter for CSRF protection
+            flow_type: 'login' for initial authentication, 'data' for Gmail/Calendar access
 
         Returns:
             Dictionary containing tokens and token metadata
         """
+        if flow_type == 'data':
+            scopes = settings.GOOGLE_LOGIN_SCOPES + settings.GOOGLE_DATA_SCOPES
+            redirect_uri = settings.GOOGLE_DATA_REDIRECT_URI
+        else:
+            scopes = settings.GOOGLE_LOGIN_SCOPES
+            redirect_uri = settings.GOOGLE_REDIRECT_URI
+
         flow = Flow.from_client_config(
             client_config=self.client_config,
-            scopes=settings.GOOGLE_SCOPES,
-            redirect_uri=settings.GOOGLE_REDIRECT_URI,
+            scopes=scopes,
+            redirect_uri=redirect_uri,
             state=state
         )
 
@@ -108,15 +126,17 @@ class AuthService:
         self,
         db: Session,
         user_info: dict,
-        tokens: dict
+        tokens: Optional[dict] = None
     ) -> User:
         """
-        Create new user or update existing user with OAuth tokens.
+        Create new user or update existing user.
+        For initial login, tokens can be None (user just authenticates).
+        For data authorization, tokens contain Gmail/Calendar access.
 
         Args:
             db: Database session
             user_info: User information from Google
-            tokens: OAuth tokens (access_token, refresh_token, etc.)
+            tokens: Optional OAuth tokens (for data access)
 
         Returns:
             User object
@@ -124,37 +144,65 @@ class AuthService:
         # Check if user already exists
         user = db.query(User).filter(User.google_id == user_info['google_id']).first()
 
-        # Encrypt tokens before storing
-        encrypted_access_token = token_encryptor.encrypt(tokens['access_token'])
-        encrypted_refresh_token = token_encryptor.encrypt(tokens['refresh_token'])
-
         if user:
             # Update existing user
             user.email = user_info['email']
             user.name = user_info.get('name')
             user.picture_url = user_info.get('picture_url')
-            user.access_token = encrypted_access_token
-            user.refresh_token = encrypted_refresh_token
-            user.token_expires_at = tokens['token_expires_at']
             user.is_active = True
+
+            # Update tokens if provided (data authorization flow)
+            if tokens:
+                user.access_token = token_encryptor.encrypt(tokens['access_token'])
+                user.refresh_token = token_encryptor.encrypt(tokens['refresh_token'])
+                user.token_expires_at = tokens['token_expires_at']
+                user.has_data_access = True
         else:
             # Create new user
-            user = User(
-                google_id=user_info['google_id'],
-                email=user_info['email'],
-                name=user_info.get('name'),
-                picture_url=user_info.get('picture_url'),
-                access_token=encrypted_access_token,
-                refresh_token=encrypted_refresh_token,
-                token_expires_at=tokens['token_expires_at'],
-                is_active=True
-            )
+            user_data = {
+                'google_id': user_info['google_id'],
+                'email': user_info['email'],
+                'name': user_info.get('name'),
+                'picture_url': user_info.get('picture_url'),
+                'is_active': True,
+                'has_data_access': False
+            }
+
+            # Add tokens if provided
+            if tokens:
+                user_data['access_token'] = token_encryptor.encrypt(tokens['access_token'])
+                user_data['refresh_token'] = token_encryptor.encrypt(tokens['refresh_token'])
+                user_data['token_expires_at'] = tokens['token_expires_at']
+                user_data['has_data_access'] = True
+
+            user = User(**user_data)
             db.add(user)
 
         db.commit()
         db.refresh(user)
 
         return user
+
+    def has_valid_data_access(self, user: User) -> bool:
+        """
+        Check if user has valid Gmail/Calendar data access.
+
+        Args:
+            user: User object
+
+        Returns:
+            True if user has authorized and has valid tokens
+        """
+        if not user.has_data_access or not user.refresh_token:
+            return False
+
+        # If access token exists and not expired, we have access
+        if user.access_token and user.token_expires_at:
+            if not is_token_expired(user.token_expires_at):
+                return True
+
+        # If we have a refresh token, we can get a new access token
+        return bool(user.refresh_token)
 
     def refresh_access_token(self, db: Session, user: User) -> str:
         """

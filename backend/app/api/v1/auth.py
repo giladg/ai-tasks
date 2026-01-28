@@ -18,10 +18,11 @@ settings = get_settings()
 @router.get("/google/login", response_model=GoogleAuthURL)
 async def google_login():
     """
-    Initiate Google OAuth flow.
+    Initiate Google OAuth flow for basic login (authentication only).
+    User will need to separately authorize Gmail/Calendar access.
     Returns authorization URL to redirect user to Google consent screen.
     """
-    authorization_url, state = auth_service.get_authorization_url()
+    authorization_url, state = auth_service.get_authorization_url(flow_type='login')
 
     return GoogleAuthURL(authorization_url=authorization_url)
 
@@ -33,8 +34,8 @@ async def google_callback(
     db: Session = Depends(get_db)
 ):
     """
-    Handle Google OAuth callback.
-    Exchanges authorization code for tokens, creates/updates user, and redirects to frontend.
+    Handle Google OAuth callback for initial login (authentication only).
+    Creates user account without Gmail/Calendar access.
 
     Args:
         code: Authorization code from Google
@@ -45,19 +46,19 @@ async def google_callback(
         Redirect to frontend with JWT token
     """
     try:
-        # Exchange code for tokens
-        tokens = auth_service.exchange_code_for_tokens(code, state)
+        # Exchange code for tokens (login flow only gets basic profile info)
+        tokens = auth_service.exchange_code_for_tokens(code, state, flow_type='login')
 
         # Get user info from Google
         user_info = auth_service.get_user_info(tokens['access_token'])
 
-        # Create or update user in database
-        user = auth_service.create_or_update_user(db, user_info, tokens)
+        # Create or update user WITHOUT data access tokens
+        user = auth_service.create_or_update_user(db, user_info, tokens=None)
 
         # Create JWT token for session
         jwt_token = auth_service.create_jwt_token(user)
 
-        # Redirect to frontend with token and user data
+        # Redirect to frontend with token
         frontend_callback = f"{settings.FRONTEND_URL}/auth/callback"
         redirect_url = f"{frontend_callback}?token={jwt_token}"
 
@@ -128,3 +129,85 @@ async def refresh_token(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Token refresh failed: {str(e)}"
         )
+
+
+@router.get("/google/authorize-data", response_model=GoogleAuthURL)
+async def google_authorize_data(current_user: User = Depends(get_current_user)):
+    """
+    Initiate Gmail and Calendar data authorization flow.
+    User must be logged in to authorize data access.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Authorization URL for Gmail/Calendar access
+    """
+    authorization_url, state = auth_service.get_authorization_url(flow_type='data')
+
+    return GoogleAuthURL(authorization_url=authorization_url)
+
+
+@router.get("/google/data-callback")
+async def google_data_callback(
+    code: str = Query(..., description="Authorization code from Google"),
+    state: str = Query(..., description="State parameter for CSRF protection"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Handle Google OAuth callback for Gmail/Calendar data authorization.
+    Updates existing user with data access tokens.
+
+    Args:
+        code: Authorization code from Google
+        state: State parameter for CSRF protection
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Redirect to frontend dashboard
+    """
+    try:
+        # Exchange code for tokens (data flow gets Gmail/Calendar access)
+        tokens = auth_service.exchange_code_for_tokens(code, state, flow_type='data')
+
+        # Get user info to verify identity
+        user_info = auth_service.get_user_info(tokens['access_token'])
+
+        # Update user with data access tokens
+        user = auth_service.create_or_update_user(db, user_info, tokens=tokens)
+
+        # Redirect to frontend dashboard
+        redirect_url = f"{settings.FRONTEND_URL}/dashboard?authorized=true"
+
+        return RedirectResponse(url=redirect_url)
+
+    except Exception as e:
+        # Redirect to frontend with error
+        error_message = urllib.parse.quote(str(e))
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/dashboard?error={error_message}"
+        )
+
+
+@router.get("/status")
+async def auth_status(current_user: User = Depends(get_current_user)):
+    """
+    Check user's authorization status.
+    Returns whether user has authorized Gmail/Calendar access.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Authorization status
+    """
+    has_data_access = auth_service.has_valid_data_access(current_user)
+
+    return {
+        "authenticated": True,
+        "has_data_access": has_data_access,
+        "email": current_user.email,
+        "name": current_user.name
+    }
