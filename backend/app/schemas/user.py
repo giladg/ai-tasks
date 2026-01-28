@@ -27,6 +27,7 @@ class User(UserBase):
     picture_url: Optional[str] = None
     last_sync_at: Optional[datetime] = None
     is_active: bool
+    is_admin: bool
     created_at: datetime
 
     class Config:
