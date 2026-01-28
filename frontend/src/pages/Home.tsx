@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Home: React.FC = () => {
@@ -99,6 +99,21 @@ const Home: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="text-center text-gray-600 mt-16">
+          <div className="flex justify-center gap-6 mb-4">
+            <Link to="/privacy" className="hover:text-blue-600 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="hover:text-blue-600 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+          <p className="text-sm">
+            © 2026 AI Task Manager. All rights reserved.
+          </p>
+        </footer>
       </div>
     </div>
   );
