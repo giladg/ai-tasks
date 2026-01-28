@@ -21,7 +21,10 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold text-gray-900">AI Task Manager</h1>
+            <div className="flex items-center gap-3">
+              <img src="/logo.svg" alt="AI Task Manager" className="w-8 h-8" />
+              <h1 className="text-xl font-bold text-gray-900">AI Task Manager</h1>
+            </div>
             <nav className="flex items-center gap-4">
               <Link
                 to="/dashboard"

@@ -16,6 +16,9 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
+          <div className="flex justify-center mb-8">
+            <img src="/logo.svg" alt="AI Task Manager Logo" className="w-24 h-24" />
+          </div>
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             AI-Powered Task Management
           </h1>

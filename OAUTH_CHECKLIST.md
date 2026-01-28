@@ -55,9 +55,13 @@ Go to https://console.cloud.google.com/apis/credentials/consent
 - [ ] **App name**: AI Task Manager (or your preferred name)
 - [ ] **User support email**: your-email@gmail.com
 - [ ] **App logo**: Upload 120x120px logo
-  - Create a simple logo or use a placeholder
-  - Must be square (120x120 pixels)
-  - PNG or JPG format
+  - Logo SVG file is available at: `logo.svg` (in project root)
+  - Must be converted to PNG format (120x120 pixels) for OAuth consent screen
+  - **To convert SVG to PNG:**
+    - Option 1: Use online tool like https://cloudconvert.com/svg-to-png
+    - Option 2: Use command line (if you have ImageMagick): `convert -resize 120x120 logo.svg logo.png`
+    - Option 3: Open logo.svg in browser, take screenshot, crop to 120x120px
+  - Upload the PNG file to Google Cloud Console
 - [ ] **App domain**:
   - Application home page: https://ai-tasks.app
   - Application privacy policy link: https://ai-tasks.app/privacy
