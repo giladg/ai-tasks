@@ -32,6 +32,7 @@ class User(Base):
 
     # Status
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
 
     # Timestamps
     created_at = Column(DateTime, server_default=func.now())

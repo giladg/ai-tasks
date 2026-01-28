@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.database import init_db
-from app.api.v1 import auth, tasks, users
+from app.api.v1 import auth, tasks, users, admin
 from app.jobs.scheduler import start_scheduler, shutdown_scheduler
 
 settings = get_settings()
@@ -68,6 +68,7 @@ async def health_check():
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["Authentication"])
 app.include_router(tasks.router, prefix=settings.API_V1_PREFIX, tags=["Tasks"])
 app.include_router(users.router, prefix=settings.API_V1_PREFIX, tags=["Users"])
+app.include_router(admin.router, prefix=settings.API_V1_PREFIX, tags=["Admin"])
 
 
 if __name__ == "__main__":

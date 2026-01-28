@@ -114,3 +114,28 @@ def get_optional_current_user(
 
     except Exception:
         return None
+
+
+def get_current_admin_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Dependency to verify current user is an admin.
+    Use this for admin-only endpoints.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        User object (if admin)
+
+    Raises:
+        HTTPException: If user is not an admin
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    return current_user

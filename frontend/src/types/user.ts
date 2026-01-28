@@ -6,6 +6,7 @@ export interface User {
   picture_url: string | null;
   last_sync_at: string | null;
   is_active: boolean;
+  is_admin: boolean;
   created_at: string;
 }
 
