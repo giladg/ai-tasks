@@ -233,8 +233,8 @@ const PrivacyPolicy: React.FC = () => {
             <div className="text-gray-700">
               <p className="mb-1">
                 <strong>Email:</strong>{' '}
-                <a href="mailto:support@ai-tasks.app" className="text-blue-600 hover:text-blue-800">
-                  support@ai-tasks.app
+                <a href="mailto:giladgolan3@gmail.com" className="text-blue-600 hover:text-blue-800">
+                  giladgolan3@gmail.com
                 </a>
               </p>
               <p>

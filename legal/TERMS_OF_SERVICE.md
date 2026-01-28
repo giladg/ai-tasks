@@ -133,7 +133,7 @@ You agree to indemnify and hold harmless AI Task Manager, its operators, and aff
 
 ### By You
 
-You may stop using the Service at any time. To delete your account, contact us at [YOUR SUPPORT EMAIL].
+You may stop using the Service at any time. To delete your account, contact us at giladgolan3@gmail.com.
 
 ### By Us
 
@@ -173,7 +173,7 @@ The Service may contain links to third-party websites or services. We are not re
 
 ### Governing Law
 
-These Terms are governed by the laws of [YOUR JURISDICTION], without regard to conflict of law principles.
+These Terms are governed by the laws of the State of Washington, without regard to conflict of law principles.
 
 ### Arbitration
 
@@ -213,8 +213,8 @@ You may not assign or transfer these Terms. We may assign our rights and obligat
 
 For questions about these Terms:
 
-**Email**: [YOUR SUPPORT EMAIL]
-**Address**: [YOUR BUSINESS ADDRESS]
+**Email**: giladgolan3@gmail.com
+**Address**: Golan, 10333 Ravenna Ave NE, Seattle WA 98125
 **Website**: https://ai-tasks.app
 
 ## 22. Special Provisions
@@ -249,9 +249,9 @@ By using the Service, you acknowledge that:
 
 ---
 
-**For California Users**: You have the right to request information about data sharing practices. Contact us at [YOUR SUPPORT EMAIL].
+**For California Users**: You have the right to request information about data sharing practices. Contact us at giladgolan3@gmail.com.
 
-**For EU Users**: You have rights under GDPR, including the right to access, rectify, erase, restrict, port, and object to processing of your data. Contact us at [YOUR SUPPORT EMAIL].
+**For EU Users**: You have rights under GDPR, including the right to access, rectify, erase, restrict, port, and object to processing of your data. Contact us at giladgolan3@gmail.com.
 
 **Last Updated**: January 28, 2026
 **Effective Date**: January 28, 2026

@@ -75,7 +75,7 @@ We use your information to:
 
 ### Data Location
 
-Your data is stored on secure servers located in [YOUR SERVER LOCATION].
+Your data is stored on secure servers located in the United States.
 
 ## Third-Party Services
 
@@ -92,7 +92,7 @@ We use Google's Gemini AI to process your email and calendar content for task ex
 
 ### Infrastructure
 
-We use [YOUR HOSTING PROVIDER] for hosting. They have access to server infrastructure but not to decrypted user data.
+We use cloud hosting services for hosting. They have access to server infrastructure but not to decrypted user data.
 
 ## Data Retention
 
@@ -121,7 +121,7 @@ To revoke our access to Gmail/Calendar:
 ### Data Deletion
 
 To delete your account and all associated data:
-1. Contact us at [YOUR SUPPORT EMAIL]
+1. Contact us at giladgolan3@gmail.com
 2. Or use the account deletion feature in your dashboard (if implemented)
 
 We will delete all your data within 30 days, except:
@@ -147,7 +147,7 @@ Our Service is not intended for users under 13 years of age. We do not knowingly
 
 ## International Users
 
-If you are accessing the Service from outside [YOUR COUNTRY], please be aware that your information may be transferred to, stored, and processed in [YOUR COUNTRY] where our servers are located.
+If you are accessing the Service from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers are located.
 
 ## Changes to This Privacy Policy
 
@@ -190,8 +190,8 @@ Legal basis for processing:
 
 If you have questions about this Privacy Policy or our data practices:
 
-**Email**: [YOUR SUPPORT EMAIL]
-**Address**: [YOUR BUSINESS ADDRESS]
+**Email**: giladgolan3@gmail.com
+**Address**: Golan, 10333 Ravenna Ave NE, Seattle WA 98125
 **Website**: https://ai-tasks.app
 
 For data protection inquiries, contact our Data Protection Officer: [DPO EMAIL if applicable]

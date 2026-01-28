@@ -209,8 +209,8 @@ const TermsOfService: React.FC = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">By You</h3>
               <p className="text-gray-700">
                 You may stop using the Service at any time. To delete your account, please contact us at{' '}
-                <a href="mailto:support@ai-tasks.app" className="text-blue-600 hover:text-blue-800">
-                  support@ai-tasks.app
+                <a href="mailto:giladgolan3@gmail.com" className="text-blue-600 hover:text-blue-800">
+                  giladgolan3@gmail.com
                 </a>.
               </p>
             </div>
@@ -263,8 +263,8 @@ const TermsOfService: React.FC = () => {
             <div className="text-gray-700">
               <p className="mb-1">
                 <strong>Email:</strong>{' '}
-                <a href="mailto:support@ai-tasks.app" className="text-blue-600 hover:text-blue-800">
-                  support@ai-tasks.app
+                <a href="mailto:giladgolan3@gmail.com" className="text-blue-600 hover:text-blue-800">
+                  giladgolan3@gmail.com
                 </a>
               </p>
               <p>
