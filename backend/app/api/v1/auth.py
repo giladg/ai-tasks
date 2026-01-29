@@ -143,10 +143,11 @@ async def google_authorize_data(current_user: User = Depends(get_current_user)):
     Returns:
         Authorization URL for Gmail/Calendar access
     """
-    # Pass user's email as login_hint to prevent wrong account selection in multi-account scenarios
+    # Pass user's email and ID - email for login_hint, ID embedded in state for callback
     authorization_url, state = auth_service.get_authorization_url(
         flow_type='data',
-        user_email=current_user.email
+        user_email=current_user.email,
+        user_id=current_user.id
     )
 
     return GoogleAuthURL(authorization_url=authorization_url)
@@ -156,7 +157,6 @@ async def google_authorize_data(current_user: User = Depends(get_current_user)):
 async def google_data_callback(
     code: str = Query(..., description="Authorization code from Google"),
     state: str = Query(..., description="State parameter for CSRF protection"),
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -165,14 +165,31 @@ async def google_data_callback(
 
     Args:
         code: Authorization code from Google
-        state: State parameter for CSRF protection
-        current_user: Current authenticated user
+        state: State parameter with embedded user_id
         db: Database session
 
     Returns:
         Redirect to frontend dashboard
     """
     try:
+        # Decode state to get user_id
+        state_data = auth_service.decode_state_token(state)
+        if not state_data or 'user_id' not in state_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid state parameter"
+            )
+
+        user_id = state_data['user_id']
+
+        # Get user from database
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
         # Exchange code for tokens (data flow gets Gmail/Calendar access)
         tokens = auth_service.exchange_code_for_tokens(code, state, flow_type='data')
 
@@ -197,6 +214,8 @@ async def google_data_callback(
 
         return RedirectResponse(url=redirect_url)
 
+    except HTTPException:
+        raise
     except Exception as e:
         # Redirect to frontend with error
         error_message = urllib.parse.quote(str(e))

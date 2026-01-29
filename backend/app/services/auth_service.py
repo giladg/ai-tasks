@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from typing import Optional, Tuple
+from jose import jwt, JWTError
 import secrets
 
 from app.config import get_settings
@@ -29,13 +30,59 @@ class AuthService:
             }
         }
 
-    def get_authorization_url(self, flow_type: str = 'login', user_email: Optional[str] = None) -> Tuple[str, str]:
+    def create_state_token(self, user_id: Optional[int] = None) -> str:
+        """
+        Create a signed state token for OAuth flow.
+        For data authorization, includes user_id so callback knows which user to update.
+
+        Args:
+            user_id: Optional user ID to embed in state (for data authorization flow)
+
+        Returns:
+            Signed state token string
+        """
+        # Generate random state for CSRF protection
+        random_state = secrets.token_urlsafe(32)
+
+        # If user_id provided, create signed JWT state
+        if user_id:
+            payload = {
+                "state": random_state,
+                "user_id": user_id,
+                "exp": datetime.utcnow() + timedelta(minutes=10)  # Short expiry for security
+            }
+            state_token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+            return state_token
+
+        # For login flow without user_id, just return random state
+        return random_state
+
+    def decode_state_token(self, state_token: str) -> Optional[dict]:
+        """
+        Decode and verify a state token from OAuth callback.
+
+        Args:
+            state_token: State token from OAuth callback
+
+        Returns:
+            Dictionary with 'state' and optionally 'user_id', or None if invalid
+        """
+        try:
+            # Try to decode as JWT
+            payload = jwt.decode(state_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            return payload
+        except JWTError:
+            # Not a JWT, treat as plain state (login flow)
+            return {"state": state_token}
+
+    def get_authorization_url(self, flow_type: str = 'login', user_email: Optional[str] = None, user_id: Optional[int] = None) -> Tuple[str, str]:
         """
         Generate Google OAuth authorization URL.
 
         Args:
             flow_type: 'login' for initial authentication, 'data' for Gmail/Calendar access
             user_email: Optional email to hint which Google account to use (prevents wrong account selection)
+            user_id: Optional user ID to embed in state (for data authorization callback)
 
         Returns:
             Tuple of (authorization_url, state)
@@ -53,8 +100,8 @@ class AuthService:
             redirect_uri=redirect_uri
         )
 
-        # Generate state for CSRF protection
-        state = secrets.token_urlsafe(32)
+        # Generate state token (includes user_id for data flow)
+        state = self.create_state_token(user_id)
 
         # Build authorization URL parameters
         auth_params = {
