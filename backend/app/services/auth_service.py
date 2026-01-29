@@ -29,12 +29,13 @@ class AuthService:
             }
         }
 
-    def get_authorization_url(self, flow_type: str = 'login') -> Tuple[str, str]:
+    def get_authorization_url(self, flow_type: str = 'login', user_email: Optional[str] = None) -> Tuple[str, str]:
         """
         Generate Google OAuth authorization URL.
 
         Args:
             flow_type: 'login' for initial authentication, 'data' for Gmail/Calendar access
+            user_email: Optional email to hint which Google account to use (prevents wrong account selection)
 
         Returns:
             Tuple of (authorization_url, state)
@@ -55,11 +56,18 @@ class AuthService:
         # Generate state for CSRF protection
         state = secrets.token_urlsafe(32)
 
-        authorization_url, _ = flow.authorization_url(
-            access_type='offline',  # Request refresh token
-            prompt='consent' if flow_type == 'data' else 'select_account',  # Force consent for data access
-            state=state
-        )
+        # Build authorization URL parameters
+        auth_params = {
+            'access_type': 'offline',  # Request refresh token
+            'prompt': 'consent' if flow_type == 'data' else 'select_account',  # Force consent for data access
+            'state': state
+        }
+
+        # Add login_hint to suggest which account to use (prevents multi-account issues)
+        if user_email:
+            auth_params['login_hint'] = user_email
+
+        authorization_url, _ = flow.authorization_url(**auth_params)
 
         return authorization_url, state
 

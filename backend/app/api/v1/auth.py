@@ -143,7 +143,11 @@ async def google_authorize_data(current_user: User = Depends(get_current_user)):
     Returns:
         Authorization URL for Gmail/Calendar access
     """
-    authorization_url, state = auth_service.get_authorization_url(flow_type='data')
+    # Pass user's email as login_hint to prevent wrong account selection in multi-account scenarios
+    authorization_url, state = auth_service.get_authorization_url(
+        flow_type='data',
+        user_email=current_user.email
+    )
 
     return GoogleAuthURL(authorization_url=authorization_url)
 
@@ -174,6 +178,16 @@ async def google_data_callback(
 
         # Get user info to verify identity
         user_info = auth_service.get_user_info(tokens['access_token'])
+
+        # Verify that the authorized account matches the logged-in user
+        if user_info['email'] != current_user.email:
+            error_message = urllib.parse.quote(
+                f"Account mismatch: You are logged in as {current_user.email} but authorized {user_info['email']}. "
+                f"Please authorize with the correct account."
+            )
+            return RedirectResponse(
+                url=f"{settings.FRONTEND_URL}/dashboard?error={error_message}"
+            )
 
         # Update user with data access tokens
         user = auth_service.create_or_update_user(db, user_info, tokens=tokens)
