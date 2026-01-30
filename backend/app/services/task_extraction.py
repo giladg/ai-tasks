@@ -93,13 +93,17 @@ class TaskExtractionService:
             # Build learning context from user's edit history
             learning_context = self.build_learning_context(user)
 
+            # Get completed tasks to avoid re-extraction
+            completed_task_sources = self.get_completed_task_sources(user)
+
             # Extract tasks using Gemini
             if gmail_threads or calendar_events:
                 try:
                     extracted_tasks = gemini_service.extract_tasks(
                         gmail_threads=gmail_threads,
                         calendar_events=calendar_events,
-                        learning_context=learning_context
+                        learning_context=learning_context,
+                        completed_task_sources=completed_task_sources
                     )
 
                     print(f"Gemini extracted {len(extracted_tasks)} tasks for user {user.id}")
@@ -127,6 +131,37 @@ class TaskExtractionService:
             print(error_msg)
 
         return result
+
+    def get_completed_task_sources(self, user: User) -> Dict[str, List[str]]:
+        """
+        Get source IDs of tasks that have been marked as done.
+        This prevents re-extracting tasks that the user already completed.
+
+        Args:
+            user: User object
+
+        Returns:
+            Dictionary with 'gmail' and 'calendar' lists of completed source_ids
+        """
+        # Query completed tasks
+        completed_tasks = self.db.query(Task).filter(
+            Task.user_id == user.id,
+            Task.is_done == True,
+            Task.source_id.isnot(None)
+        ).all()
+
+        # Organize by source type
+        completed_sources = {
+            'gmail': [],
+            'calendar': []
+        }
+
+        for task in completed_tasks:
+            source_type = task.source_type.value  # Convert enum to string
+            if source_type in completed_sources:
+                completed_sources[source_type].append(task.source_id)
+
+        return completed_sources
 
     def build_learning_context(self, user: User) -> str:
         """

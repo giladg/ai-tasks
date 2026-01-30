@@ -22,7 +22,8 @@ class GeminiService:
         self,
         gmail_threads: List[Dict],
         calendar_events: List[Dict],
-        learning_context: Optional[str] = None
+        learning_context: Optional[str] = None,
+        completed_task_sources: Optional[Dict[str, List[str]]] = None
     ) -> List[Dict]:
         """
         Extract tasks from Gmail threads and Calendar events using Gemini.
@@ -31,12 +32,13 @@ class GeminiService:
             gmail_threads: List of formatted Gmail threads
             calendar_events: List of formatted Calendar events
             learning_context: Optional context from user's edit history
+            completed_task_sources: Dict of source_ids for tasks already marked done
 
         Returns:
             List of extracted task dictionaries
         """
         # Build prompt
-        prompt = self._build_prompt(gmail_threads, calendar_events, learning_context)
+        prompt = self._build_prompt(gmail_threads, calendar_events, learning_context, completed_task_sources)
 
         try:
             # Call Gemini API
@@ -55,7 +57,8 @@ class GeminiService:
         self,
         gmail_threads: List[Dict],
         calendar_events: List[Dict],
-        learning_context: Optional[str]
+        learning_context: Optional[str],
+        completed_task_sources: Optional[Dict[str, List[str]]] = None
     ) -> str:
         """
         Build prompt for Gemini task extraction.
@@ -64,12 +67,18 @@ class GeminiService:
             gmail_threads: List of Gmail thread dictionaries
             calendar_events: List of Calendar event dictionaries
             learning_context: Optional learning context
+            completed_task_sources: Dict of source_ids for completed tasks
 
         Returns:
             Complete prompt string
         """
+        # Get current date/time for context
+        current_datetime = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
         # System instructions
-        system_prompt = """You are a task extraction assistant. Your job is to analyze emails and calendar events to identify actionable tasks.
+        system_prompt = f"""You are a task extraction assistant. Your job is to analyze emails and calendar events to identify actionable tasks.
+
+CURRENT DATE/TIME: {current_datetime}
 
 RULES:
 1. Extract ONLY concrete, actionable tasks (not informational items or FYIs)
@@ -86,9 +95,15 @@ RULES:
    - If no clear deadline, leave as null
 5. Do NOT extract:
    - Informational emails (newsletters, notifications)
-   - Completed past events (unless they imply follow-up actions)
    - Social invitations without action items
    - Automated system messages
+6. IMPORTANT - Past calendar events:
+   - For events marked [PAST EVENT], do NOT create "prepare for" or "get ready for" tasks
+   - Only extract follow-up tasks if explicitly implied (e.g., "send meeting notes", "complete action items discussed")
+   - Preparation tasks only make sense for [UPCOMING EVENT] events
+7. IMPORTANT - Avoid duplicate work:
+   - Do NOT extract tasks from sources that the user has already completed (see COMPLETED TASKS section below)
+   - If a source_id is listed as completed, skip it entirely
 
 OUTPUT FORMAT (must be valid JSON):
 Return a JSON array of tasks. Each task must have:
@@ -118,6 +133,24 @@ Example output:
   }
 ]
 """
+
+        # Completed tasks section
+        completed_section = ""
+        if completed_task_sources:
+            gmail_completed = completed_task_sources.get('gmail', [])
+            calendar_completed = completed_task_sources.get('calendar', [])
+
+            if gmail_completed or calendar_completed:
+                completed_section = "## COMPLETED TASKS\n"
+                completed_section += "The user has already completed tasks from these sources. DO NOT extract tasks from them:\n\n"
+
+                if gmail_completed:
+                    completed_section += "Gmail thread IDs (already done):\n"
+                    completed_section += ", ".join(gmail_completed[:50]) + "\n\n"
+
+                if calendar_completed:
+                    completed_section += "Calendar event IDs (already done):\n"
+                    completed_section += ", ".join(calendar_completed[:50]) + "\n\n"
 
         # Learning context section
         context_section = ""
@@ -161,6 +194,7 @@ Return ONLY the JSON array, no other text or explanation.
         # Combine all sections
         full_prompt = (
             system_prompt +
+            completed_section +
             context_section +
             gmail_section +
             calendar_section +

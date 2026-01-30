@@ -178,6 +178,13 @@ class CalendarService:
         else:
             time_str = f"{start_str} to {end_str}"
 
+        # Determine if event is in the past
+        is_past = False
+        if event['start']:
+            is_past = event['start'] < datetime.utcnow()
+
+        timing_note = " [PAST EVENT]" if is_past else " [UPCOMING EVENT]"
+
         # Format attendees
         attendees_str = ', '.join(event['attendees'][:5]) if event['attendees'] else 'None'
         if len(event['attendees']) > 5:
@@ -185,7 +192,7 @@ class CalendarService:
 
         formatted = f"""
 Title: {event['summary']}
-Time: {time_str}
+Time: {time_str}{timing_note}
 Location: {event['location'] or 'Not specified'}
 Attendees: {attendees_str}
 Organizer: {event['organizer'] or 'Unknown'}
