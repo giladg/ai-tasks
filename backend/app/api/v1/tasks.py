@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -88,12 +88,12 @@ async def get_tasks(
             # Filter to tasks extracted on the same date as the latest task
             latest_date = latest_task.extracted_at.date()
             query = query.filter(
-                db.func.date(Task.extracted_at) == latest_date
+                func.date(Task.extracted_at) == latest_date
             )
     elif extracted_date is not None:
         # Filter by specific extraction date
         query = query.filter(
-            db.func.date(Task.extracted_at) == extracted_date
+            func.date(Task.extracted_at) == extracted_date
         )
 
     if is_done is not None:
@@ -135,11 +135,11 @@ async def get_extraction_dates(
     """
     # Query distinct extraction dates
     dates = db.query(
-        db.func.date(Task.extracted_at).label('extraction_date')
+        func.date(Task.extracted_at).label('extraction_date')
     ).filter(
         Task.user_id == current_user.id
     ).distinct().order_by(
-        db.func.date(Task.extracted_at).desc()
+        func.date(Task.extracted_at).desc()
     ).all()
 
     # Convert to list of date objects
