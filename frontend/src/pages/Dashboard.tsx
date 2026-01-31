@@ -9,9 +9,10 @@ import DateNavigator from '../components/tasks/DateNavigator';
 import AuthorizationBanner from '../components/auth/AuthorizationBanner';
 import { Priority, SourceType } from '../types/task';
 import { formatRelativeTime } from '../utils/dateFormat';
+import { authService } from '../services/authService';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { needsAuthorization, refetchAuthStatus } = useAuthStatus();
@@ -56,8 +57,24 @@ const Dashboard: React.FC = () => {
     }
   }, [searchParams, refetchAuthStatus]);
 
-  const handleSync = () => {
-    triggerSync();
+  const handleSync = async () => {
+    try {
+      await triggerSync();
+      // Wait for sync to complete (it runs in background)
+      // Give it time to process, then refresh user data
+      setTimeout(async () => {
+        try {
+          const updatedUser = await authService.getCurrentUser();
+          setUser(updatedUser);
+          // Also save to localStorage
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+      }, 2500); // Wait 2.5 seconds for sync to complete
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
   };
 
   const handleDateChange = (date: string | null) => {

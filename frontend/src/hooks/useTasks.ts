@@ -49,8 +49,8 @@ export const useTasks = (filters?: TaskFilters) => {
     deleteTaskMutation.mutate(id);
   };
 
-  const triggerSync = () => {
-    triggerSyncMutation.mutate();
+  const triggerSync = async () => {
+    await triggerSyncMutation.mutateAsync();
   };
 
   return {
