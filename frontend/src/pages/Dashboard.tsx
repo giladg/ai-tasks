@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAuthStatus } from '../hooks/useAuthStatus';
 import TaskList from '../components/tasks/TaskList';
 import TaskFilters from '../components/tasks/TaskFilters';
+import DateNavigator from '../components/tasks/DateNavigator';
 import AuthorizationBanner from '../components/auth/AuthorizationBanner';
 import { Priority, SourceType } from '../types/task';
 
@@ -13,13 +14,17 @@ const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { needsAuthorization, refetchAuthStatus } = useAuthStatus();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<{
     is_done?: boolean;
     priority?: Priority;
     source_type?: SourceType;
+    latest_only?: boolean;
+    extracted_date?: string;
   }>({
     is_done: false, // Show only pending tasks by default
+    latest_only: true, // Show only latest extraction by default
   });
 
   const {
@@ -52,6 +57,25 @@ const Dashboard: React.FC = () => {
 
   const handleSync = () => {
     triggerSync();
+  };
+
+  const handleDateChange = (date: string | null) => {
+    setSelectedDate(date);
+    if (date === null) {
+      // Show latest only
+      setFilters(prev => ({
+        ...prev,
+        latest_only: true,
+        extracted_date: undefined,
+      }));
+    } else {
+      // Show specific date
+      setFilters(prev => ({
+        ...prev,
+        latest_only: false,
+        extracted_date: date,
+      }));
+    }
   };
 
   // Calculate stats
@@ -216,6 +240,9 @@ const Dashboard: React.FC = () => {
             Last synced: {new Date(user.last_sync_at).toLocaleString()}
           </div>
         )}
+
+        {/* Date Navigator */}
+        <DateNavigator selectedDate={selectedDate} onDateChange={handleDateChange} />
 
         {/* Filters */}
         <TaskFilters filters={filters} onFilterChange={setFilters} />

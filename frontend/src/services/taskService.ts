@@ -31,4 +31,10 @@ export const taskService = {
   async triggerSync(): Promise<void> {
     await api.post('/api/v1/tasks/trigger-sync');
   },
+
+  // Get available extraction dates
+  async getExtractionDates(): Promise<string[]> {
+    const response = await api.get<string[]>('/api/v1/tasks/extraction-dates');
+    return response.data;
+  },
 };
