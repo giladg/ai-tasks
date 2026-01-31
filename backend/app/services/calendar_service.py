@@ -1,7 +1,7 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
 from app.config import get_settings
@@ -181,7 +181,13 @@ class CalendarService:
         # Determine if event is in the past
         is_past = False
         if event['start']:
-            is_past = event['start'] < datetime.utcnow()
+            # Make both datetimes timezone-aware for comparison
+            now = datetime.now(timezone.utc)
+            event_start = event['start']
+            # If event_start is naive, make it UTC-aware
+            if event_start.tzinfo is None:
+                event_start = event_start.replace(tzinfo=timezone.utc)
+            is_past = event_start < now
 
         timing_note = " [PAST EVENT]" if is_past else " [UPCOMING EVENT]"
 

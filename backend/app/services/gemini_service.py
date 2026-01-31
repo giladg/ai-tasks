@@ -107,30 +107,30 @@ RULES:
 
 OUTPUT FORMAT (must be valid JSON):
 Return a JSON array of tasks. Each task must have:
-{
+{{
   "description": "Clear, concise task description",
   "priority": "low" | "medium" | "high" | "urgent",
   "due_date": "YYYY-MM-DD" or null,
   "source_type": "gmail" | "calendar",
   "source_id": "thread_id or event_id from input"
-}
+}}
 
 Example output:
 [
-  {
+  {{
     "description": "Review and approve Q4 budget proposal",
     "priority": "high",
     "due_date": "2026-01-15",
     "source_type": "gmail",
     "source_id": "thread_123"
-  },
-  {
+  }},
+  {{
     "description": "Prepare slides for team meeting on project status",
     "priority": "medium",
     "due_date": "2026-01-10",
     "source_type": "calendar",
     "source_id": "event_456"
-  }
+  }}
 ]
 """
 
