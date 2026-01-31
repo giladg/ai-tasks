@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 from datetime import date, datetime
 from typing import Optional, List
+import logging
 
 from app.database import get_db
 from app.schemas.task import Task as TaskSchema, TaskUpdate, TaskList, TaskCreate
@@ -12,6 +13,7 @@ from app.api.deps import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/tasks")
+logger = logging.getLogger(__name__)
 
 
 def log_task_edit(
@@ -298,6 +300,9 @@ async def trigger_sync(
         Success message
     """
     from app.jobs.daily_sync import sync_user_data
+
+    logger.info(f"Manual sync triggered for user {current_user.id} ({current_user.email})")
+    print(f"[API] Manual sync triggered for user {current_user.id} ({current_user.email})")
 
     # Run sync in background
     background_tasks.add_task(sync_user_data, current_user.id)
