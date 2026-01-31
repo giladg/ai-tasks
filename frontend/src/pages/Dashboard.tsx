@@ -8,6 +8,7 @@ import TaskFilters from '../components/tasks/TaskFilters';
 import DateNavigator from '../components/tasks/DateNavigator';
 import AuthorizationBanner from '../components/auth/AuthorizationBanner';
 import { Priority, SourceType } from '../types/task';
+import { formatRelativeTime } from '../utils/dateFormat';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -237,7 +238,7 @@ const Dashboard: React.FC = () => {
         {/* Last Sync Info */}
         {user?.last_sync_at && (
           <div className="mb-6 text-sm text-gray-600">
-            Last synced: {new Date(user.last_sync_at).toLocaleString()}
+            Last synced: {formatRelativeTime(user.last_sync_at)}
           </div>
         )}
 
