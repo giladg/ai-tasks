@@ -45,6 +45,8 @@ def log_task_edit(
 @router.get("", response_model=TaskList)
 async def get_tasks(
     date_filter: Optional[date] = Query(None, alias="date", description="Filter by due date"),
+    extracted_date: Optional[date] = Query(None, description="Filter by extraction date (YYYY-MM-DD)"),
+    latest_only: Optional[bool] = Query(False, description="Show only tasks from latest extraction"),
     is_done: Optional[bool] = Query(None, description="Filter by completion status"),
     is_ai_error: Optional[bool] = Query(None, description="Filter by AI error flag"),
     priority: Optional[PriorityEnum] = Query(None, description="Filter by priority"),
@@ -57,6 +59,8 @@ async def get_tasks(
 
     Args:
         date_filter: Filter by due date
+        extracted_date: Filter by extraction date
+        latest_only: Show only tasks from the latest extraction date
         is_done: Filter by completion status
         is_ai_error: Filter by AI error flag
         priority: Filter by priority level
@@ -73,6 +77,24 @@ async def get_tasks(
     # Apply filters
     if date_filter is not None:
         query = query.filter(Task.due_date == date_filter)
+
+    if latest_only:
+        # Get the latest extraction date for this user
+        latest_task = db.query(Task).filter(
+            Task.user_id == current_user.id
+        ).order_by(Task.extracted_at.desc()).first()
+
+        if latest_task:
+            # Filter to tasks extracted on the same date as the latest task
+            latest_date = latest_task.extracted_at.date()
+            query = query.filter(
+                db.func.date(Task.extracted_at) == latest_date
+            )
+    elif extracted_date is not None:
+        # Filter by specific extraction date
+        query = query.filter(
+            db.func.date(Task.extracted_at) == extracted_date
+        )
 
     if is_done is not None:
         query = query.filter(Task.is_done == is_done)
@@ -93,6 +115,35 @@ async def get_tasks(
         tasks=[TaskSchema.model_validate(task) for task in tasks],
         total=len(tasks)
     )
+
+
+@router.get("/extraction-dates", response_model=List[date])
+async def get_extraction_dates(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get list of unique extraction dates for user's tasks.
+    Allows frontend to show date navigation for different extraction batches.
+
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of dates (YYYY-MM-DD) when tasks were extracted, sorted newest first
+    """
+    # Query distinct extraction dates
+    dates = db.query(
+        db.func.date(Task.extracted_at).label('extraction_date')
+    ).filter(
+        Task.user_id == current_user.id
+    ).distinct().order_by(
+        db.func.date(Task.extracted_at).desc()
+    ).all()
+
+    # Convert to list of date objects
+    return [d.extraction_date for d in dates]
 
 
 @router.get("/{task_id}", response_model=TaskSchema)

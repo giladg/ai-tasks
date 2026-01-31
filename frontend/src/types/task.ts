@@ -32,6 +32,8 @@ export interface TaskList {
 
 export interface TaskFilters {
   date?: string;
+  extracted_date?: string;
+  latest_only?: boolean;
   is_done?: boolean;
   is_ai_error?: boolean;
   priority?: Priority;
