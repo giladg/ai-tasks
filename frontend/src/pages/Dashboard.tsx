@@ -17,6 +17,7 @@ const Dashboard: React.FC = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { needsAuthorization, refetchAuthStatus } = useAuthStatus();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isSyncInProgress, setIsSyncInProgress] = useState(false);
 
   const [filters, setFilters] = useState<{
     is_done?: boolean;
@@ -36,7 +37,6 @@ const Dashboard: React.FC = () => {
     updateTask,
     deleteTask,
     triggerSync,
-    isSyncing,
   } = useTasks(filters);
 
   // Handle authorization callback
@@ -59,23 +59,30 @@ const Dashboard: React.FC = () => {
 
   const handleSync = async () => {
     try {
+      setIsSyncInProgress(true);
       const oldSyncTime = user?.last_sync_at;
+
+      console.log('Starting sync, old sync time:', oldSyncTime);
       await triggerSync();
 
       // Poll for updated user data until last_sync_at changes
       const pollForUpdate = async (attempts = 0, maxAttempts = 20) => {
         if (attempts >= maxAttempts) {
           console.log('Max polling attempts reached');
+          setIsSyncInProgress(false);
           return;
         }
 
         try {
           const updatedUser = await authService.getCurrentUser();
+          console.log(`Poll attempt ${attempts + 1}, new sync time:`, updatedUser.last_sync_at);
 
           // Check if last_sync_at has been updated
           if (updatedUser.last_sync_at !== oldSyncTime) {
+            console.log('Sync completed! Updating user data');
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
+            setIsSyncInProgress(false);
             return; // Success, stop polling
           }
 
@@ -83,6 +90,7 @@ const Dashboard: React.FC = () => {
           setTimeout(() => pollForUpdate(attempts + 1, maxAttempts), 500);
         } catch (error) {
           console.error('Failed to refresh user data:', error);
+          setIsSyncInProgress(false);
         }
       };
 
@@ -90,6 +98,7 @@ const Dashboard: React.FC = () => {
       setTimeout(() => pollForUpdate(), 1000);
     } catch (error) {
       console.error('Sync failed:', error);
+      setIsSyncInProgress(false);
     }
   };
 
@@ -130,10 +139,10 @@ const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={handleSync}
-              disabled={isSyncing}
+              disabled={isSyncInProgress}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isSyncing ? (
+              {isSyncInProgress ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Syncing...</span>

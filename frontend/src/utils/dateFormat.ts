@@ -1,19 +1,27 @@
 /**
+ * Parse UTC datetime string from backend into local Date object
+ * Backend sends datetime in format: "2026-01-31T12:34:56.123456" (no timezone, but it's UTC)
+ * @param dateString ISO date string from backend (assumed UTC if no timezone)
+ * @returns Date object in local timezone
+ */
+const parseUTCDate = (dateString: string): Date => {
+  // If already has timezone info (Z or +/-), parse directly
+  if (dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
+    return new Date(dateString);
+  }
+
+  // Backend sends naive datetime (no timezone) - treat as UTC
+  // Append 'Z' to explicitly mark as UTC
+  return new Date(dateString + 'Z');
+};
+
+/**
  * Format a date string into a human-readable localized format
  * @param dateString ISO date string from backend (UTC)
  * @returns Formatted date string in local timezone
  */
 export const formatDateTime = (dateString: string): string => {
-  // Parse the date string - if it doesn't have timezone info, treat as UTC
-  let date: Date;
-
-  if (dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('T')) {
-    // Has timezone info, parse directly
-    date = new Date(dateString);
-  } else {
-    // No timezone info, append Z to treat as UTC
-    date = new Date(dateString + 'Z');
-  }
+  const date = parseUTCDate(dateString);
 
   // Check if date is valid
   if (isNaN(date.getTime())) {
@@ -38,17 +46,7 @@ export const formatDateTime = (dateString: string): string => {
  * @returns Relative time string in local timezone
  */
 export const formatRelativeTime = (dateString: string): string => {
-  // Parse the date string - if it doesn't have timezone info, treat as UTC
-  let date: Date;
-
-  if (dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('T')) {
-    // Has timezone info, parse directly
-    date = new Date(dateString);
-  } else {
-    // No timezone info, append Z to treat as UTC
-    date = new Date(dateString + 'Z');
-  }
-
+  const date = parseUTCDate(dateString);
   const now = new Date();
 
   // Check if date is valid
