@@ -59,19 +59,35 @@ const Dashboard: React.FC = () => {
 
   const handleSync = async () => {
     try {
+      const oldSyncTime = user?.last_sync_at;
       await triggerSync();
-      // Wait for sync to complete (it runs in background)
-      // Give it time to process, then refresh user data
-      setTimeout(async () => {
+
+      // Poll for updated user data until last_sync_at changes
+      const pollForUpdate = async (attempts = 0, maxAttempts = 20) => {
+        if (attempts >= maxAttempts) {
+          console.log('Max polling attempts reached');
+          return;
+        }
+
         try {
           const updatedUser = await authService.getCurrentUser();
-          setUser(updatedUser);
-          // Also save to localStorage
-          localStorage.setItem('user', JSON.stringify(updatedUser));
+
+          // Check if last_sync_at has been updated
+          if (updatedUser.last_sync_at !== oldSyncTime) {
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            return; // Success, stop polling
+          }
+
+          // Not updated yet, wait and try again
+          setTimeout(() => pollForUpdate(attempts + 1, maxAttempts), 500);
         } catch (error) {
           console.error('Failed to refresh user data:', error);
         }
-      }, 2500); // Wait 2.5 seconds for sync to complete
+      };
+
+      // Start polling after initial delay to let background job start
+      setTimeout(() => pollForUpdate(), 1000);
     } catch (error) {
       console.error('Sync failed:', error);
     }

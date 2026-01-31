@@ -1,16 +1,26 @@
 /**
  * Format a date string into a human-readable localized format
- * @param dateString ISO date string from backend
- * @returns Formatted date string
+ * @param dateString ISO date string from backend (UTC)
+ * @returns Formatted date string in local timezone
  */
 export const formatDateTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Parse the date string - if it doesn't have timezone info, treat as UTC
+  let date: Date;
+
+  if (dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('T')) {
+    // Has timezone info, parse directly
+    date = new Date(dateString);
+  } else {
+    // No timezone info, append Z to treat as UTC
+    date = new Date(dateString + 'Z');
+  }
 
   // Check if date is valid
   if (isNaN(date.getTime())) {
     return 'Invalid date';
   }
 
+  // toLocaleString automatically converts to local timezone
   return date.toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -23,12 +33,22 @@ export const formatDateTime = (dateString: string): string => {
 
 /**
  * Format a date as relative time (e.g., "2 minutes ago", "3 hours ago")
- * Falls back to absolute time for dates older than 24 hours
- * @param dateString ISO date string from backend
- * @returns Relative time string
+ * Falls back to absolute time for dates older than 7 days
+ * @param dateString ISO date string from backend (UTC)
+ * @returns Relative time string in local timezone
  */
 export const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Parse the date string - if it doesn't have timezone info, treat as UTC
+  let date: Date;
+
+  if (dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('T')) {
+    // Has timezone info, parse directly
+    date = new Date(dateString);
+  } else {
+    // No timezone info, append Z to treat as UTC
+    date = new Date(dateString + 'Z');
+  }
+
   const now = new Date();
 
   // Check if date is valid
@@ -66,6 +86,6 @@ export const formatRelativeTime = (dateString: string): string => {
     return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
   }
 
-  // Older than 7 days - show absolute date
+  // Older than 7 days - show absolute date in local timezone
   return formatDateTime(dateString);
 };
